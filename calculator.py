@@ -1,85 +1,59 @@
 from tkinter import *
 import ast
 
-root=Tk()
-#writing a function to get button clicked and ass it to entry widget
-i=0
-#thus function gets the number to be added and ads it to input
-
 def get_number(num):
-    global i
-    #insert the num at index i
-    display.insert(i,num)
-    #increment the index
-    i+=1
+    display.insert(END, str(num))
 
 def get_operation(operator):
-    global i
-    length = len(operator)
-    display.insert(i, operator)
-    i+=length
+    current = display.get()
+    if current and current[-1] in '+-*/%':
+        display.delete(len(current)-1, END)
+    display.insert(END, operator)
 
 def clear_all():
-    display.delete(0,END)
+    display.delete(0, END)
 
 def calculate():
-    entire_string = display.get()
     try:
-        #a = parser.expr(entire_string).compile()
-        node = ast.parse(entire_string, mode="eval")
-        result = eval(compile(node,'<string>', 'eval'))
+        result = eval(compile(ast.parse(display.get(), mode="eval"), '<string>', 'eval'))
         clear_all()
-        display.insert(0, result)
-    except Exception:
+        display.insert(END, str(result))
+    except:
         clear_all()
-        display.insert(0,"error")
+        display.insert(END, "error")
 
 def undo():
-    entire_string = display.get()
-    if len(entire_string):
-        new_string = entire_string[:-1]
-        clear_all()
-        display.insert(0, new_string)
+    current = display.get()
+    display.delete(len(current)-1, END)
+
+root = Tk()
+root.title("Tkinter Calculator")
+
+display = Entry(root, font=("Arial", 18), bd=10, insertwidth=2, width=14, borderwidth=4, relief='ridge', justify='right')
+display.grid(row=0, column=0, columnspan=4, pady=10)
+
+# Layout for buttons
+buttons = [
+    ('7',1,0), ('8',1,1), ('9',1,2), ('/',1,3),
+    ('4',2,0), ('5',2,1), ('6',2,2), ('*',2,3),
+    ('1',3,0), ('2',3,1), ('3',3,2), ('-',3,3),
+    ('0',4,0), ('.',4,1), ('=',4,2), ('+',4,3),
+    ('AC',5,0), ('<-',5,1), ('(',5,2), (')',5,3)
+]
+
+for (text, row, col) in buttons:
+    if text == '=':
+        cmd = calculate
+    elif text == 'AC':
+        cmd = clear_all
+    elif text == '<-':
+        cmd = undo
+    elif text in '+-*/()':
+        cmd = lambda t=text: get_operation(t)
     else:
-        clear_all()
-        display.insert(0,"")
+        cmd = lambda t=text: get_number(t)
 
-#let first add an input field which will be entry widget
-display = Entry(root)
-display.grid(row=1, columnspan=6, sticky=W+E)
+    Button(root, text=text, width=5, height=2, font=("Arial",14), command=cmd).grid(row=row, column=col, padx=5, pady=5)
 
-#adding buttons from 1 to 9
-numbers=[1,2,3,4,5,6,7,8,9]
-counter=0
-for x in range(3):
-    for y in range(3):
-        button_text = numbers[counter]
-        button = Button(root,text=button_text,width=2,height=2,command=lambda num=button_text:get_number(num))
-        button.grid(row=x+2,column=y)
-        counter+=1
-
-#adding zero on row 5
-button =Button(root,text="0",width=2,height=2,command=lambda:get_number(0))
-button.grid(row=5,column=1)
-
-#adding AC and = button
-Button(root,text="AC",width=2,height=2,command=lambda:clear_all()).grid(row=5, column=0)
-Button(root,text="=",width=2,height=2,command=lambda: calculate()).grid(row=5,column =2)
-
-#adding the delete/ undo button
-Button(root,text="<-",width=2,height=2,command=lambda:undo()).grid(row=5,column=4)
-
-#now column 3 is empty lets fill it up with operations
-count=0
-operations=['+','-','*','/','*3.14','%','(','**',')','**2']
-for x in range(4):
-    for y in range(3):
-        if count<len(operations):
-            button = Button(root,text=operations[count],width=2, height=2,command= lambda text = operations[count]:get_operation(text))
-            count+=1
-            button.grid(row=x+2, column=y+3)
-
-root.geometry("300x300")
-  
+root.resizable(False, False)
 root.mainloop()
-
